@@ -18,6 +18,7 @@ limitations under the License.
 
 #include "fuzztest/fuzztest.h"
 #include "tensorflow/core/platform/stringprintf.h"
+#include <fuzzer/FuzzedDataProvider.h>
 
 // This is a fuzzer for tensorflow::strings::Printf
 
@@ -42,7 +43,16 @@ void FuzzTest(const std::vector<std::string> ss) {
   assert(n[3] <= size_so_far);
   assert(ret.size() == n[3]);
 }
-FUZZ_TEST(CC_FUZZING, FuzzTest)
-  .WithDomains(fuzztest::Arbitrary<std::vector<std::string>>().WithSize(3));
 
-}  // namespace
+}
+
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+  FuzzedDataProvider fdp(data, size);
+  std::vector<std::string> ss;
+  ss.push_back(fdp.ConsumeRandomLengthString());
+  ss.push_back(fdp.ConsumeRandomLengthString());
+  ss.push_back(fdp.ConsumeRandomLengthString());
+  FuzzTest(ss);
+  return 0;
+}
+
